@@ -1,4 +1,3 @@
-```powershell
 # Active Directory Replication Health Check Menu
 
 Clear-Host
@@ -162,4 +161,4 @@ do {
     }
 
 } until ($choice -eq "0")
-```
+
