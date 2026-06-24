@@ -1,0 +1,165 @@
+```powershell
+# Active Directory Replication Health Check Menu
+
+Clear-Host
+
+function Show-Menu {
+    Clear-Host
+    Write-Host "=========================================" -ForegroundColor Cyan
+    Write-Host " Active Directory Replication Check Menu "
+    Write-Host "=========================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "1  - Replication Summary (repadmin /replsummary)"
+    Write-Host "2  - Show Replication Partners (repadmin /showrepl *)"
+    Write-Host "3  - DNS Health Check (dcdiag /test:dns /v)"
+    Write-Host "4  - Time Synchronization Check (w32tm /query /status)"
+    Write-Host "5  - Secure Channel Check"
+    Write-Host "6  - SPN Duplicate Check"
+    Write-Host "7  - Domain Controller Health Check"
+    Write-Host "8  - Force Replication (repadmin /syncall /AdeP)"
+    Write-Host "9  - Run ALL Checks"
+    Write-Host "0  - Exit"
+    Write-Host ""
+}
+
+function Pause-Script {
+    Write-Host ""
+    Read-Host "Press Enter to continue"
+}
+
+do {
+    Show-Menu
+    $choice = Read-Host "Select an option"
+
+    switch ($choice) {
+
+        "1" {
+            Clear-Host
+            Write-Host "=== Replication Summary ===" -ForegroundColor Green
+            repadmin /replsummary
+            Pause-Script
+        }
+
+        "2" {
+            Clear-Host
+            Write-Host "=== Replication Partners ===" -ForegroundColor Green
+            repadmin /showrepl *
+            Pause-Script
+        }
+
+        "3" {
+            Clear-Host
+            Write-Host "=== DNS Health Check ===" -ForegroundColor Green
+            dcdiag /test:dns /v
+            Pause-Script
+        }
+
+        "4" {
+            Clear-Host
+            Write-Host "=== Time Synchronization ===" -ForegroundColor Green
+            w32tm /query /status
+            Pause-Script
+        }
+
+        "5" {
+            Clear-Host
+            Write-Host "=== Secure Channel Check ===" -ForegroundColor Green
+
+            $IsDC = (Get-CimInstance Win32_ComputerSystem).DomainRole -ge 4
+
+            if ($IsDC) {
+                $Domain = (Get-CimInstance Win32_ComputerSystem).Domain
+                nltest /sc_verify:$Domain
+            }
+            else {
+                Test-ComputerSecureChannel -Verbose
+            }
+
+            Pause-Script
+        }
+
+        "6" {
+            Clear-Host
+            Write-Host "=== SPN Duplicate Check ===" -ForegroundColor Green
+
+            setspn -X
+
+            Write-Host ""
+            $Account = Read-Host "Enter account/server name for setspn -L (or leave blank)"
+
+            if ($Account) {
+                setspn -L $Account
+            }
+
+            Pause-Script
+        }
+
+        "7" {
+            Clear-Host
+            Write-Host "=== Domain Controller Health Check ===" -ForegroundColor Green
+            dcdiag /c /v
+            Pause-Script
+        }
+
+        "8" {
+            Clear-Host
+            Write-Host "=== Force Replication ===" -ForegroundColor Yellow
+            repadmin /syncall /AdeP
+            Pause-Script
+        }
+
+        "9" {
+            Clear-Host
+
+            Write-Host "===================================" -ForegroundColor Cyan
+            Write-Host " Running ALL Active Directory Checks "
+            Write-Host "===================================" -ForegroundColor Cyan
+
+            Write-Host "`n[1] Replication Summary" -ForegroundColor Green
+            repadmin /replsummary
+
+            Write-Host "`n[2] Replication Partners" -ForegroundColor Green
+            repadmin /showrepl *
+
+            Write-Host "`n[3] DNS Health Check" -ForegroundColor Green
+            dcdiag /test:dns /v
+
+            Write-Host "`n[4] Time Synchronization" -ForegroundColor Green
+            w32tm /query /status
+
+            Write-Host "`n[5] Secure Channel Check" -ForegroundColor Green
+
+            $IsDC = (Get-CimInstance Win32_ComputerSystem).DomainRole -ge 4
+
+            if ($IsDC) {
+                $Domain = (Get-CimInstance Win32_ComputerSystem).Domain
+                nltest /sc_verify:$Domain
+            }
+            else {
+                Test-ComputerSecureChannel -Verbose
+            }
+
+            Write-Host "`n[6] SPN Duplicate Check" -ForegroundColor Green
+            setspn -X
+
+            Write-Host "`n[7] Domain Controller Health Check" -ForegroundColor Green
+            dcdiag /c /v
+
+            Write-Host "`n[8] Force Replication" -ForegroundColor Green
+            repadmin /syncall /AdeP
+
+            Pause-Script
+        }
+
+        "0" {
+            Write-Host "Exiting..." -ForegroundColor Yellow
+        }
+
+        default {
+            Write-Host "Invalid option." -ForegroundColor Red
+            Start-Sleep -Seconds 2
+        }
+    }
+
+} until ($choice -eq "0")
+```
